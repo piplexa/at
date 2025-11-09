@@ -1,0 +1,50 @@
+# Файл .dockerignore для исключения ненужных файлов при сборке Docker образов
+
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose.yml
+docker/
+Dockerfile*
+.dockerignore
+
+# Documentation
+*.md
+CLAUDE.md
+readme.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test coverage
+*.out
+coverage.html
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
+
+# Environment files
+.env
+.env.local
+.env.*.local

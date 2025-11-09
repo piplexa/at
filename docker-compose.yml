@@ -1,0 +1,88 @@
+# Docker Compose файл для AT - распределённого планировщика заданий
+# Запускает три сервиса: PostgreSQL, at-api и at-worker
+
+version: '3.8'
+
+services:
+  # PostgreSQL база данных
+  postgres:
+    image: postgres:15-alpine
+    container_name: at-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: at_scheduler
+    ports:
+      - "5432:5432"
+    volumes:
+      # Монтируем DDL скрипт для инициализации базы
+      - ./sql/ddl.sql:/docker-entrypoint-initdb.d/ddl.sql
+      # Persistent volume для данных
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - at-network
+
+  # API сервис
+  at-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: at-api
+    environment:
+      # Настройки подключения к БД
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: at_scheduler
+      DB_SSLMODE: disable
+      # Настройки API
+      API_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - at-network
+    restart: unless-stopped
+
+  # Worker сервис
+  at-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: at-worker
+    environment:
+      # Настройки подключения к БД
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: at_scheduler
+      DB_SSLMODE: disable
+      # Настройки Worker
+      WORKER_ID: worker-1
+      POLL_INTERVAL: 5s
+      BATCH_SIZE: 10
+      MAX_WORKERS: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - at-network
+    restart: unless-stopped
+    # Можно масштабировать workers
+    # docker-compose up --scale at-worker=3
+
+networks:
+  at-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
