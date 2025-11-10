@@ -326,3 +326,33 @@ curl "http://localhost:8080/api/v1/tasks?status=pending&limit=10"
 - Бизнес-логика в services
 - Health check endpoint для мониторинга
 - Поддержка Docker и локального запуска
+
+## Тестирование
+
+Интеграционные HTTP тесты для всех API endpoints.
+
+### Быстрый запуск тестов
+
+```bash
+# 1. Запустите API
+cd src && go run main.go &
+
+# 2. Запустите тесты (в другом терминале)
+cd tests && go test -v
+```
+
+### Что тестируется
+
+- ✅ POST /api/v1/tasks - создание задания
+- ✅ GET /api/v1/tasks/:id - получение задания
+- ✅ DELETE /api/v1/tasks/:id - отмена задания
+- ✅ GET /api/v1/tasks - список заданий с фильтрами и пагинацией
+- ✅ GET /health - healthcheck
+- ✅ Полный цикл: создание → получение → отмена
+
+### Документация
+
+- [TEST_README.md](TEST_README.md) - подробная документация по тестам
+- [tests/README.md](tests/README.md) - быстрый старт
+
+**Важно:** Тесты работают через HTTP с реальной БД. Перед запуском убедитесь, что PostgreSQL запущен и миграции применены.

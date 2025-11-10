@@ -46,9 +46,8 @@ func main() {
 	// Настраиваем роутинг
 	mux := http.NewServeMux()
 
-	// API endpoints
-	// Используем паттерн с "/" на конце, чтобы ловить все подпути
-	mux.HandleFunc("/api/v1/tasks/", func(w http.ResponseWriter, r *http.Request) {
+	// Обработчик для всех запросов к /api/v1/tasks
+	taskHandler := func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost:
 			handlers.CreateTaskHandler(taskService)(w, r)
@@ -64,7 +63,12 @@ func main() {
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
-	})
+	}
+
+	// API endpoints
+	// Регистрируем оба паттерна: с "/" и без "/" для совместимости
+	mux.HandleFunc("/api/v1/tasks", taskHandler)   // Без слеша - для POST, GET списка
+	mux.HandleFunc("/api/v1/tasks/", taskHandler)  // Со слешом - для GET/:id, DELETE/:id
 
 	// Health check endpoint
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
