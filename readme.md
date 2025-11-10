@@ -102,3 +102,7 @@ WHERE status='processing'
 - Горизонтальное масштабирование (N workers без координации)
 - Простота: polling надежнее event-driven для критичных систем
 - Предсказуемая нагрузка: 10 workers × 1 req/sec = 10 запросов/сек на PostgreSQL
+
+# TODO
+- [] добавить в at-api healthcheck 
+

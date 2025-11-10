@@ -1,0 +1,27 @@
+# Конфигурация с секретами
+.env
+
+# Бинарные файлы
+*.exe
+*.dll
+*.so
+*.dylib
+at-api
+
+# Go тестовые файлы
+*.test
+*.out
+
+# Go модули кеш
+go.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
