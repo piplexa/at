@@ -76,7 +76,7 @@ WORKER_ID=worker-3 go run main.go &
 Worker автоматически использует hostname контейнера как WORKER_ID, если переменная не задана явно:
 
 ```bash
-docker-compose up --scale at-worker=3
+docker-compose up --scale at-worker=3 -d
 ```
 
 **Что произойдет:**

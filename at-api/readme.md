@@ -266,22 +266,6 @@ GET /api/v1/tasks?status=pending&task_type=send_email&limit=10
 OK
 ```
 
-## Архитектура
-
-```
-at-api/
-├── src/
-│   ├── config/          # Конфигурация из переменных окружения
-│   ├── db/              # Подключение к PostgreSQL
-│   ├── models/          # Структуры данных
-│   ├── services/        # Бизнес-логика
-│   ├── handlers/        # HTTP обработчики
-│   ├── main.go          # Точка входа
-│   └── go.mod           # Зависимости Go
-├── .env                 # Конфигурация (не в git)
-└── .env.example         # Пример конфигурации
-```
-
 ## Примеры использования
 
 ### Создание задания с curl
@@ -291,11 +275,14 @@ curl -X POST http://localhost:8080/api/v1/tasks \
   -H "Content-Type: application/json" \
   -d '{
     "execute_at": "2025-11-10T15:00:00Z",
-    "task_type": "send_email",
+    "task_type": "http_callback",
     "payload": {
-      "to": "user@example.com",
-      "subject": "Test"
-    },
+        "url": "http://at-api:8080/health",
+  	    "method": "GET",
+        "data": {
+            "param1":"value1"
+        }
+    }
     "max_attempts": 3
   }'
 ```
@@ -329,7 +316,7 @@ curl "http://localhost:8080/api/v1/tasks?status=pending&limit=10"
 
 ## Тестирование
 
-Интеграционные HTTP тесты для всех API endpoints.
+Интеграционные HTTP тесты для всех API endpoints. Стресс тест.
 
 ### Быстрый запуск тестов
 
@@ -349,6 +336,7 @@ cd tests && go test -v
 - ✅ GET /api/v1/tasks - список заданий с фильтрами и пагинацией
 - ✅ GET /health - healthcheck
 - ✅ Полный цикл: создание → получение → отмена
+- ✅ Стресс тест на 4000 заданий
 
 ### Документация
 

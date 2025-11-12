@@ -33,7 +33,7 @@ Workers×N (Golang, горизонтальное масштабирование)
 CREATE TABLE scheduled_tasks (
     id BIGSERIAL PRIMARY KEY,
     execute_at TIMESTAMP NOT NULL,           -- Когда выполнить
-    task_type VARCHAR(50) NOT NULL,          -- Тип задания
+    task_type VARCHAR(50) NOT NULL,          -- Тип задания http_callback|rabbitmq|email
     payload JSONB NOT NULL,                  -- Данные для выполнения
     status VARCHAR(20) DEFAULT 'pending',    -- pending|processing|completed|failed|cancelled
     attempts INT DEFAULT 0,                  -- Счетчик попыток
@@ -105,4 +105,5 @@ WHERE status='processing'
 
 # TODO
 - [] добавить в at-api healthcheck 
-
+- [] реализовать задания: task_type rabbitmq и email
+- [] более тщательные и более масштабные тесты

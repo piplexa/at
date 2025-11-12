@@ -21,7 +21,7 @@ import ws from 'k6/ws';
  *  "task_type": "http_callback",
  *  "payload": {
  *      "url": "http://at-api:8080/health", <- Именно такой адрес, так как вызов будет внутри контейнера at-worker
- *	    "method": "GET"
+ *	    "method": "GET",
  *      "data": {
  *          "param1":"value1"
  *      }
