@@ -21,6 +21,19 @@
 - Email уведомления (заглушка)
 - Обработка ошибок и retry логика
 
+**task_type** - способ выполнения задания. Может принимать следующие значения:
+- http_callback
+- rabbitmq
+- email
+
+**http_callback** в базе данных - это json следующего формата:
+```json
+{"url": "http://test.com/", "data": {"param1":"data1"}}
+```
+
+*data* может быть как json строка, которая будет передана как raw в POST запросе. 
+
+
 **worker/cleaner.go** - отдельная goroutine:
 - Каждые 5 минут ищет зависшие задания (status='processing' AND updated_at < NOW() - 5 min)
 - Возвращает их в 'pending' с инкрементом attempts

@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -61,13 +62,15 @@ func (e *Executor) Execute(ctx context.Context, task *models.ScheduledTask) mode
 	}
 }
 
-// executeHTTPCallback выполняет HTTP POST запрос к URL, указанному в payload.
-// Ожидает, что payload содержит поля: {"url": "http://...", "data": {...}}
+// executeHTTPCallback выполняет HTTP запрос к URL, указанному в payload.
+// Ожидает, что payload содержит поля: {"url": "http://...", "method": "GET|POST|PUT|DELETE|PATCH", "data": {...}}
+// Если method не указан, используется POST по умолчанию.
 // Возвращает успех, если HTTP статус 2xx, иначе ошибку.
 func (e *Executor) executeHTTPCallback(ctx context.Context, task *models.ScheduledTask) models.TaskResult {
 	// Парсим payload
 	var payload struct {
 		URL  string                 `json:"url"`
+		Method string 				`json:"method"`
 		Data map[string]interface{} `json:"data"`
 	}
 
@@ -79,11 +82,26 @@ func (e *Executor) executeHTTPCallback(ctx context.Context, task *models.Schedul
 		}
 	}
 
-	if payload.URL == "" {
+	// Method должен быть одним из значений: POST, PUT, GET, DELETE, PATCH
+	// Если не указан, используем POST по умолчанию
+	if payload.Method == "" {
+		payload.Method = "POST"
+	}
+
+	// Проверяем, что метод допустимый
+	allowedMethods := map[string]bool{
+		"POST":   true,
+		"PUT":    true,
+		"GET":    true,
+		"DELETE": true,
+		"PATCH":  true,
+	}
+
+	if !allowedMethods[payload.Method] {
 		return models.TaskResult{
 			TaskID:       task.ID,
 			Success:      false,
-			ErrorMessage: "url field is required in payload",
+			ErrorMessage: fmt.Sprintf("invalid method '%s', allowed: POST, PUT, GET, DELETE, PATCH", payload.Method),
 		}
 	}
 
@@ -97,8 +115,8 @@ func (e *Executor) executeHTTPCallback(ctx context.Context, task *models.Schedul
 		}
 	}
 
-	// Создание HTTP запроса
-	req, err := http.NewRequestWithContext(ctx, "POST", payload.URL, bytes.NewBuffer(jsonData))
+	// Создание HTTP запроса с указанным методом
+	req, err := http.NewRequestWithContext(ctx, payload.Method, payload.URL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return models.TaskResult{
 			TaskID:       task.ID,
@@ -120,19 +138,31 @@ func (e *Executor) executeHTTPCallback(ctx context.Context, task *models.Schedul
 	}
 	defer resp.Body.Close()
 
+	// Читаем тело ответа
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return models.TaskResult{
+			TaskID:       task.ID,
+			Success:      false,
+			ErrorMessage: fmt.Sprintf("failed to read response body: %v", err),
+		}
+	}
+
 	// Проверка статуса ответа
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return models.TaskResult{
 			TaskID:       task.ID,
 			Success:      false,
-			ErrorMessage: fmt.Sprintf("HTTP request failed with status: %d", resp.StatusCode),
+			ErrorMessage: fmt.Sprintf("HTTP request failed with status: %d, body: %s", resp.StatusCode, string(body)),
 		}
 	}
 
 	log.Printf("[Executor] Task %d completed successfully (HTTP %d)", task.ID, resp.StatusCode)
+
 	return models.TaskResult{
-		TaskID:  task.ID,
-		Success: true,
+		TaskID:       task.ID,
+		Success:      true,
+		ErrorMessage: string(body),	// Даже если запрос выполнился успешно, запишем ответ
 	}
 }
 

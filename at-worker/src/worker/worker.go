@@ -220,10 +220,10 @@ func (w *Worker) handleTaskResult(ctx context.Context, result models.TaskResult)
 			UPDATE scheduled_tasks
 			SET status = 'completed',
 			    completed_at = NOW(),
-			    error_message = NULL
+			    error_message = $2
 			WHERE id = $1
 		`
-		_, err := w.db.ExecContext(ctx, query, result.TaskID)
+		_, err := w.db.ExecContext(ctx, query, result.TaskID, result.ErrorMessage)
 		if err != nil {
 			log.Printf("[Worker %s] Error updating completed task %d: %v", w.workerID, result.TaskID, err)
 			return
