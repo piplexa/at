@@ -13,7 +13,7 @@ at-api
 *.out
 
 # Go модули кеш
-go.sum
+#go.sum
 
 # IDE
 .idea/
