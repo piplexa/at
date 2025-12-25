@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"at-api/config"
 	"at-api/db"
@@ -15,6 +16,28 @@ import (
 
 	"github.com/joho/godotenv"
 )
+
+// responseWriter оборачивает http.ResponseWriter для захвата статус-кода
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+// loggingMiddleware логирует все HTTP-запросы
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+		next.ServeHTTP(rw, r)
+		duration := time.Since(start)
+		log.Printf("%s %s %d %v", r.Method, r.URL.Path, rw.statusCode, duration)
+	})
+}
 
 func main() {
 	// Пытаемся загрузить .env файл, если он существует
@@ -67,8 +90,8 @@ func main() {
 
 	// API endpoints
 	// Регистрируем оба паттерна: с "/" и без "/" для совместимости
-	mux.HandleFunc("/api/v1/tasks", taskHandler)   // Без слеша - для POST, GET списка
-	mux.HandleFunc("/api/v1/tasks/", taskHandler)  // Со слешом - для GET/:id, DELETE/:id
+	mux.HandleFunc("/api/v1/tasks", taskHandler)  // Без слеша - для POST, GET списка
+	mux.HandleFunc("/api/v1/tasks/", taskHandler) // Со слешом - для GET/:id, DELETE/:id
 
 	// Health check endpoint
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -76,11 +99,14 @@ func main() {
 		w.Write([]byte("OK"))
 	})
 
+	// Оборачиваем mux в middleware для логирования
+	wrappedMux := loggingMiddleware(mux)
+
 	// Запускаем сервер
 	addr := fmt.Sprintf(":%s", cfg.Server.Port)
 	log.Printf("Starting AT API server on %s", addr)
 
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	if err := http.ListenAndServe(addr, wrappedMux); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

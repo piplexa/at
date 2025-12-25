@@ -24,6 +24,8 @@ DB_SSLMODE=disable
 API_PORT=8080
 ```
 
+Если не указать файл `.env`, будут использованы значения по умолчанию указанные выше
+
 ### Локальный запуск
 
 ```bash
@@ -282,7 +284,7 @@ curl -X POST http://localhost:8080/api/v1/tasks \
         "data": {
             "param1":"value1"
         }
-    }
+    },
     "max_attempts": 3
   }'
 ```
