@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: at_scheduler
     ports:
-      - "7001:5432"
+      - "5432:5432"
     volumes:
       # Монтируем DDL скрипт для инициализации базы
       - ./sql/ddl.sql:/docker-entrypoint-initdb.d/ddl.sql
@@ -36,7 +36,7 @@ services:
       # Переопределяем хост БД для Docker окружения
       DB_HOST: postgres
     ports:
-      - "6000:8080"
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
